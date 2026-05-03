@@ -27,14 +27,9 @@ const Upload = () => {
 
   const navigate = useNavigate();
 
-  const [file, setFile] =
-    useState<File | null>(null);
-
-  const [statusText, setStatusText] =
-    useState("");
-
-  const [isProcessing, setIsProcessing] =
-    useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [statusText, setStatusText] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     init();
@@ -106,7 +101,7 @@ const Upload = () => {
         return;
       }
 
-      // 🚀 Upload resume
+      // Upload Resume
       setStatusText("Uploading resume...");
       const uploadedResume = await fs.upload([file]);
 
@@ -114,49 +109,49 @@ const Upload = () => {
         uploadedResume?.path ||
         uploadedResume?.[0]?.path;
 
-      console.log("📄 Resume Path:", resumePath);
-
       if (!resumePath) {
         throw new Error("Resume upload failed");
       }
 
-      // 📄 Convert PDF
+      // Convert PDF to Image
       setStatusText("Converting PDF...");
+
       let image = null;
 
       if (typeof window !== "undefined") {
         image = await convertPdfToImage(file);
       }
 
-      if (!image || !image.file) {
+      if (!image?.file) {
         throw new Error("Image conversion failed");
       }
 
-      // 🖼 Upload image
+      // Upload Preview Image
       setStatusText("Uploading preview...");
-      const uploadedImage = await fs.upload([image.file]);
+      const uploadedImage = await fs.upload([
+        image.file,
+      ]);
 
       const imagePath =
         uploadedImage?.path ||
         uploadedImage?.[0]?.path;
 
-      console.log("🖼 Image Path:", imagePath);
-
       if (!imagePath) {
         throw new Error("Image upload failed");
       }
 
-      // 🤖 AI analysis (FINAL FIX)
+      // AI Feedback
       setStatusText("Analyzing resume...");
 
       let feedback;
 
       try {
-        const instructions = prepareInstructions({
-          jobTitle,
-          jobDescription,
-          AIResponseFormat: "json",
-        });
+        const instructions =
+          prepareInstructions({
+            jobTitle,
+            jobDescription,
+            AIResponseFormat: "json",
+          });
 
         const response = await ai.feedback(
           resumePath,
@@ -165,9 +160,6 @@ const Upload = () => {
 
         const raw = response?.message?.content;
 
-        console.log("RAW AI:", raw);
-
-        // 🔥 HANDLE BOTH CASES
         if (typeof raw === "string") {
           const cleaned = raw
             .replace(/```json/g, "")
@@ -176,20 +168,16 @@ const Upload = () => {
 
           feedback = JSON.parse(cleaned);
         } else {
-          // already object
           feedback = raw;
         }
-
-        console.log("✅ FINAL FEEDBACK:", feedback);
-
       } catch (err) {
-        console.error("❌ AI ERROR:", err);
-        setStatusText("AI failed. Check console.");
+        console.error("AI Error:", err);
+        setStatusText("AI failed");
         setIsProcessing(false);
         return;
       }
 
-      // 💾 Save data
+      // Save Data
       const id = generateUUID();
 
       await kv.set(
@@ -211,9 +199,8 @@ const Upload = () => {
       setTimeout(() => {
         navigate(`/resume/${id}`);
       }, 1500);
-
     } catch (error) {
-      console.error("❌ MAIN ERROR:", error);
+      console.error(error);
       setStatusText("Something went wrong");
     } finally {
       setIsProcessing(false);
