@@ -7,15 +7,17 @@ export const meta = () => ([
   { name: 'description', content: 'Log into your account' },
 ])
 
-const Auth: () => Element = () => {
+const Auth : () => Element = () => {
     const{ isLoading, auth  } = usePuterStore();
     const location = useLocation();
     const next: string = location.search.split("next=")[1];
     const navigate = useNavigate();
 
     useEffect(() => {
-    if (auth.isAuthenticated) navigate(next);
-    }, [auth.isAuthenticated, next])
+  if (!isLoading && auth.isAuthenticated) {
+    navigate(next);
+  }
+}, [isLoading, auth.isAuthenticated, next, navigate]);
 
   return (
     <main className="bg-[url('/images/bg-auth.svg')] bg-cover min-h-screen flex items-center justify-center">
